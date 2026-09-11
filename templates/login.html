@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate Security Login - Campus Transit Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-badge">🚌</div>
+                <h2>Campus Transit Monitor</h2>
+                <p>Security & Gate Management Portal</p>
+            </div>
+
+            {% if error %}
+            <div class="flash-alert error">
+                <span>⚠️</span> {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="form-group">
+                    <label for="username">Operator / Admin Username</label>
+                    <input type="text" id="username" name="username" class="input-field" placeholder="Enter username (admin)" required autofocus autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="input-field" placeholder="Enter password (admin123)" required>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <span>🔓 Log In to Security Dashboard</span>
+                </button>
+            </form>
+
+            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.82rem; color: var(--text-muted);">
+                Default Credentials: <code>admin</code> / <code>admin123</code>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Transit Monitor - Gate Entry & Exit Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Main Header & Navigation -->
+    <header class="app-header">
+        <div class="brand-wrapper">
+            <div class="brand-icon">🚌</div>
+            <div class="brand-text">
+                <span class="brand-title">Campus Transit Monitor</span>
+                <span class="brand-sub">Gate Security & Vehicle Activity Tracker</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('dashboard') }}" class="nav-link active">🎥 Live Monitor</a></li>
+                <li><a href="{{ url_for('records') }}" class="nav-link">📋 Activity Records</a></li>
+            </ul>
+        </nav>
+
+        <div class="user-badge">
+            <div class="avatar">A</div>
+            <span>{{ session.get('user', 'Gate Admin') }}</span>
+            <a href="{{ url_for('logout') }}" style="margin-left: 10px; color: var(--danger); font-size: 0.8rem; font-weight: 600;" title="Logout">Logout</a>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Metrics Overview -->
+        <div class="metrics-grid">
+            <div class="metric-card" style="--card-accent: var(--primary);">
+                <div class="metric-icon">📊</div>
+                <div class="metric-info">
+                    <h4>Total Gate Logs</h4>
+                    <div class="metric-value" id="stat-total-records">{{ stats.total_records }}</div>
+                    <div class="metric-sub">Recorded vehicle movements</div>
+                </div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--success);">
+                <div class="metric-icon">🚌</div>
+                <div class="metric-info">
+                    <h4>Buses On Campus</h4>
+                    <div class="metric-value" id="stat-on-campus">{{ stats.on_campus }}</div>
+                    <div class="metric-sub">Currently inside facility</div>
+                </div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--warning);">
+                <div class="metric-icon">🏁</div>
+                <div class="metric-info">
+                    <h4>Exited Today</h4>
+                    <div class="metric-value" id="stat-exited-today">{{ stats.exited_today }}</div>
+                    <div class="metric-sub">Completed campus visits</div>
+                </div>
+            </div>
+
+            <div class="metric-card" style="--card-accent: var(--info);">
+                <div class="metric-icon">🛡️</div>
+                <div class="metric-info">
+                    <h4>System Health</h4>
+                    <div class="metric-value" style="font-size: 1.1rem; padding-top: 4px;" id="stat-model-status">Operational</div>
+                    <div class="metric-sub">Camera & Reader Active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Layout Grid -->
+        <div class="dashboard-grid">
+            <!-- Left Panel: Live Stream & Video Upload Control -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>📹</span> Live Gate Surveillance Feed
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label for="video-source-select" style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Feed Source:</label>
+                        <select id="video-source-select" class="input-field" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: auto;">
+                            <option value="sample_file">Sample Bus Video</option>
+                            <option value="webcam">Live USB Webcam (0)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Video Upload Zone -->
+                <div class="upload-dropzone" id="upload-dropzone">
+                    <input type="file" id="video-upload-input" accept="video/mp4,video/avi,video/quicktime,video/x-matroska,video/webm" style="display: none;">
+                    <div class="dropzone-content">
+                        <div class="dropzone-icon">📤</div>
+                        <div class="dropzone-text">
+                            <strong>Upload Bus Video File</strong>
+                            <p>Drag and drop your MP4, AVI, or MOV video here, or click to browse</p>
+                        </div>
+                        <button type="button" class="btn-secondary" id="browse-btn" onclick="document.getElementById('video-upload-input').click();">
+                            <span>📂 Browse Files</span>
+                        </button>
+                    </div>
+                    <div id="upload-status-msg" class="upload-status" style="display: none;"></div>
+                </div>
+
+                <!-- Live Stream Display -->
+                <div class="video-container">
+                    <img id="live-stream-feed" src="{{ url_for('video_feed') }}" class="video-stream" alt="Live Camera Gate Feed">
+                    <div class="stream-overlay">
+                        <div class="badge-live">
+                            <div class="pulse-dot"></div> CAMERA 01 - LIVE
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Gate Log Feed -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>📋</span> Recent Activity Feed
+                    </div>
+                    <a href="{{ url_for('records') }}" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">View All Logs</a>
+                </div>
+
+                <ul class="activity-list" id="recent-activity-list">
+                    {% if logs %}
+                        {% for log in logs[:8] %}
+                        <li class="activity-item">
+                            <div class="activity-details">
+                                <span class="plate-number">{{ log['Registration Plate'] }}</span>
+                                <span class="activity-time">{{ log['Entry Time'] if log['Entry Time'] != '-' else log['Exit Time'] }}</span>
+                            </div>
+                            <div>
+                                {% if log['Status'] == 'ON CAMPUS' %}
+                                <span class="badge badge-campus">ON CAMPUS</span>
+                                {% else %}
+                                <span class="badge badge-exited">EXITED ({{ log['Duration (Minutes)'] }}m)</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="activity-item" style="justify-content: center; color: var(--text-muted);">
+                            No vehicle activity recorded yet.
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        Campus Bus Gate Entry & Exit Tracker &bull; Department of Security & Transit &bull; Powered by Flask & OpenCV
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
+

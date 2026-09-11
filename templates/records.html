@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate Activity Records - Campus Transit Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Main Header & Navigation -->
+    <header class="app-header">
+        <div class="brand-wrapper">
+            <div class="brand-icon">🚌</div>
+            <div class="brand-text">
+                <span class="brand-title">Campus Transit Monitor</span>
+                <span class="brand-sub">Gate Security & Vehicle Activity Tracker</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('dashboard') }}" class="nav-link">🎥 Live Monitor</a></li>
+                <li><a href="{{ url_for('records') }}" class="nav-link active">📋 Activity Records</a></li>
+            </ul>
+        </nav>
+
+        <div class="user-badge">
+            <div class="avatar">A</div>
+            <span>{{ session.get('user', 'Gate Admin') }}</span>
+            <a href="{{ url_for('logout') }}" style="margin-left: 10px; color: var(--danger); font-size: 0.8rem; font-weight: 600;" title="Logout">Logout</a>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span>📋</span> Vehicle Gate Entry & Exit Records
+                </div>
+                <a href="{{ url_for('export_excel') }}" class="btn-primary" style="width: auto; padding: 0.5rem 1.1rem; font-size: 0.85rem;">
+                    <span>📥 Export to Excel (.xlsx)</span>
+                </a>
+            </div>
+
+            <!-- Toolbar / Filters -->
+            <div class="toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="record-search" class="input-field" placeholder="Search plate number, vehicle ID, or direction...">
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Status:</label>
+                    <select id="record-status-filter" class="input-field" style="width: 150px; padding: 0.55rem;">
+                        <option value="ALL">All Records</option>
+                        <option value="ON CAMPUS">ON CAMPUS</option>
+                        <option value="EXITED">EXITED</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-wrapper">
+                <table class="data-table" id="records-table">
+                    <thead>
+                        <tr>
+                            <th>Log ID</th>
+                            <th>Vehicle ID</th>
+                            <th>Registration Plate</th>
+                            <th>Direction</th>
+                            <th>Entry Time</th>
+                            <th>Exit Time</th>
+                            <th>Duration</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if records %}
+                            {% for rec in records %}
+                            <tr data-plate="{{ rec['Registration Plate'] }}" data-id="{{ rec['Vehicle ID'] }}" data-status="{{ rec['Status'] }}" data-direction="{{ rec['Direction'] }}">
+                                <td>#{{ rec['Log ID'] }}</td>
+                                <td><strong>{{ rec['Vehicle ID'] }}</strong></td>
+                                <td><span class="plate-number">{{ rec['Registration Plate'] }}</span></td>
+                                <td>
+                                    {% if rec['Direction'] == 'Entry' %}
+                                    <span class="badge badge-entry">📥 ENTRY</span>
+                                    {% else %}
+                                    <span class="badge badge-exited">📤 EXIT</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ rec['Entry Time'] }}</td>
+                                <td>{{ rec['Exit Time'] }}</td>
+                                <td>
+                                    {% if rec['Duration (Minutes)'] != '-' and rec['Duration (Minutes)'] != '' %}
+                                    <strong>{{ rec['Duration (Minutes)'] }} mins</strong>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>{{ rec['Date'] }}</td>
+                                <td>
+                                    {% if rec['Status'] == 'ON CAMPUS' %}
+                                    <span class="badge badge-campus">ON CAMPUS</span>
+                                    {% else %}
+                                    <span class="badge badge-exited">EXITED</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                    No records found in database file <code>bus_gate_log.xlsx</code>.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        Campus Bus Gate Entry & Exit Tracker &bull; Department of Security & Transit &bull; Powered by Flask & OpenCV
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
+
